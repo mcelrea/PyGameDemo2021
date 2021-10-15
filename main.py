@@ -1,3 +1,5 @@
+import random
+
 import pygame
 from player import *
 from wall import *
@@ -5,6 +7,10 @@ from bullet import *
 
 #start the pygame engine
 pygame.init()
+
+#start the pygame font engine
+pygame.font.init()
+myfont = pygame.font.SysFont('Comic Sans MS', 23) #load a font for use
 
 #game variables
 gameOver = False
@@ -23,6 +29,11 @@ def create_level_1():
     walls.append(Wall(200,300,30,100,(255,0,0)))
     walls.append(Wall(500,0,300,5,(0,0,255)))
     walls.append(Wall(40,400,50,50,(50,100,255)))
+
+def drawHUD():
+    textsurface = myfont.render('Number of Bullets ' + str(len(player_bullets)), False, (255, 255, 255))
+    screen.blit(textsurface,(0,0))
+
 
 #Abstraction: It will use a list, for loop and if statements
 def check_for_wall_collision():
@@ -43,37 +54,57 @@ def draw_player_bullets():
     for i in range(len(player_bullets)):
         player_bullets[i].draw(screen)
 
+def update_bullets():
+    for i in range(len(player_bullets)-1, -1, -1): #length of the list to 0
+        player_bullets[i].update()
+        #has this bullet gone off the screen?
+        if not player_bullets[i].isOnScreen():
+            del player_bullets[i]
+        else:
+            for j in range(len(walls)):
+                if walls[j].getCollisionRectangle().colliderect(player_bullets[i].getCollisionRectangle()):
+                    del player_bullets[i]
+                    break #exit and stop checking this bullet for collision because we deleted it
+
 def clear_screen():
     pygame.draw.rect(screen, (0,0,0), (0, 0, 1280, 720))
 
 def checkPlayerInput():
     global p1
     global wall1
-    oldx = p1.getX()
-    oldy = p1.getY()
+    bullet_xvel = 0
+    bullet_yvel = 0
 
     pressed = pygame.key.get_pressed() #all the keys that have been pressed
 
     #MOVE PLAYER
     if pressed[pygame.K_d] or pressed[pygame.K_RIGHT]:
         p1.moveRight()
+        bullet_xvel = 5
         if check_for_wall_collision() == True:
             p1.moveLeft() #undo the move right
     if pressed[pygame.K_a] or pressed[pygame.K_LEFT]:
         p1.moveLeft()
+        bullet_xvel = -5
         if check_for_wall_collision() == True:
             p1.moveRight() #undo the move left
     if pressed[pygame.K_w]  or pressed[pygame.K_UP]:
         p1.moveUp()
+        bullet_yvel = -5
         if check_for_wall_collision() == True:
             p1.moveDown() #undo the move up
     if pressed[pygame.K_s] or pressed[pygame.K_DOWN]:
         p1.moveDown()
+        bullet_yvel = 5
         if check_for_wall_collision() == True:
             p1.moveUp() #undo the move down
 
     if pressed[pygame.K_SPACE]:
-        player_bullets.append(Bullet(p1.x, p1.y))
+        #if the bullet is not moving
+        while bullet_xvel == 0 and bullet_yvel == 0:
+            bullet_xvel = random.randint(-5,5)
+            bullet_yvel = random.randint(-5,5)
+        player_bullets.append(Bullet(p1.x, p1.y, bullet_xvel, bullet_yvel))
 
 
 create_level_1()
@@ -90,6 +121,7 @@ while not gameOver:
     checkPlayerInput()
 
     #(2) A.I. - Artificial Intelligence
+    update_bullets()
 
     #(3) Check for collisions
 
@@ -98,6 +130,7 @@ while not gameOver:
     p1.draw(screen)
     draw_walls()
     draw_player_bullets()
+    drawHUD()
 
     #put all the graphics on the screen
     #should be the LAST LINE of game code
