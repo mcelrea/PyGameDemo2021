@@ -4,6 +4,7 @@ import pygame
 from player import *
 from wall import *
 from bullet import *
+from enemy import *
 
 #start the pygame engine
 pygame.init()
@@ -14,14 +15,28 @@ myfont = pygame.font.SysFont('Comic Sans MS', 23) #load a font for use
 
 #game variables
 gameOver = False
+canShoot = True
 p1 = Player(100,200,(0,255,0))
 walls = [] #create a LIST where I can store EVERY wall
 player_bullets = [] #create a LIST where I can store EVERY player bullet on the screen
+enemies = [] #a list of enemies
 
 #game independent variables (needed for every pygame)
 FPS = 60 #60 Frames Per Second for the game update cycle
 fpsClock = pygame.time.Clock() #used to lock the game to 60 FPS
 screen = pygame.display.set_mode((1280,720)); #initialize the game window
+
+def create_enemies():
+    enemies.append(SimpleEnemy(1200,15))
+    enemies.append(SimpleEnemy(1200,700))
+
+def draw_enemies():
+    for i in range(len(enemies)):
+        enemies[i].draw(screen)
+
+def update_enemies():
+    for i in range(len(enemies)):
+        enemies[i].act(p1)
 
 def create_level_1():
     global walls
@@ -72,6 +87,7 @@ def clear_screen():
 def checkPlayerInput():
     global p1
     global wall1
+    global canShoot
     bullet_xvel = 0
     bullet_yvel = 0
 
@@ -100,14 +116,20 @@ def checkPlayerInput():
             p1.moveUp() #undo the move down
 
     if pressed[pygame.K_SPACE]:
-        #if the bullet is not moving
-        while bullet_xvel == 0 and bullet_yvel == 0:
-            bullet_xvel = random.randint(-5,5)
-            bullet_yvel = random.randint(-5,5)
-        player_bullets.append(Bullet(p1.x, p1.y, bullet_xvel, bullet_yvel))
+        if canShoot:
+            #if the bullet is not moving
+            while bullet_xvel == 0 and bullet_yvel == 0:
+                bullet_xvel = random.randint(-5,5)
+                bullet_yvel = random.randint(-5,5)
+            player_bullets.append(Bullet(p1.x, p1.y, bullet_xvel, bullet_yvel))
+            canShoot = False
+    else: #they are NOT pressing the spacebar
+        canShoot = True
+
 
 
 create_level_1()
+create_enemies()
 #main while loop
 while not gameOver:
     #loop through and empty the event queue, key presses
@@ -122,6 +144,7 @@ while not gameOver:
 
     #(2) A.I. - Artificial Intelligence
     update_bullets()
+    update_enemies()
 
     #(3) Check for collisions
 
@@ -130,6 +153,7 @@ while not gameOver:
     p1.draw(screen)
     draw_walls()
     draw_player_bullets()
+    draw_enemies()
     drawHUD()
 
     #put all the graphics on the screen
