@@ -8,7 +8,7 @@ class SimpleEnemy:
     y = 0
     size = 15
     color = (255,100,100)
-    speed = 5
+    speed = 2
 
     def __init__(self, x, y):
         self.x = x
@@ -19,6 +19,9 @@ class SimpleEnemy:
                             ((self.x,self.y),
                              (self.x-self.size,self.y+self.size),
                              (self.x+self.size,self.y+self.size)))
+        #the next two lines will draw the collision rectangle for debugging purposes
+        myRect = self.getCollisionRectangle()
+        pygame.draw.rect(screen, (255,0,0), myRect, 1)
 
     def act(self, player):
         deltaX = abs(player.x - self.x)
@@ -37,3 +40,8 @@ class SimpleEnemy:
             else:
                 self.y += self.speed #move down
 
+    def getCollisionRectangle(self):
+        return pygame.Rect(self.x-self.size+4,
+                           self.y,
+                           self.size*2-8,
+                           self.size)
